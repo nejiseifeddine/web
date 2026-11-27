@@ -2,6 +2,7 @@ from django.core.exceptions import ValidationError
 from django.core.validators import FileExtensionValidator
 from django.db import models
 from django.utils import timezone
+from AccountApp.models import Doctor, Patient
 
 
 class Appointment(models.Model):
@@ -22,7 +23,8 @@ class Appointment(models.Model):
     prescription = models.FileField(
         upload_to='prescriptions/',
         blank=True,
-        validators=[FileExtensionValidator(allowed_extensions=['pdf'])],
+        validators=[FileExtensionValidator(allowed_extensions=['pdf'],
+                                           message="Accepter uniquement des fichiers PDF")],
         verbose_name="Ordonnance",
     )
     created_at = models.DateTimeField(auto_now_add=True)
@@ -59,6 +61,17 @@ class Appointment(models.Model):
             raise ValidationError(
                 {'appointment_date': "La date du rendez-vous doit être > date d'aujord'hui."}
             )
+
+    class Meta:
+        verbose_name = "Rendez-vous"
+        verbose_name_plural = "Rendez-vous"
+        ordering = ['appointment_date']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['doctor', 'appointment_date'],
+                name='unique_doctor_appointment_date',
+            ),
+        ]
 
     def __str__(self):
         return f"{self.patient} — {self.doctor} — {self.appointment_date:%d/%m/%Y %H:%M}"
